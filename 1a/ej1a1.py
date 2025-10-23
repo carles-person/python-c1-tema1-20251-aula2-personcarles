@@ -28,7 +28,31 @@ def get_user_ip():
     # 2. Verificar si la petición fue exitosa (código 200)
     # 3. Devolver el texto de la respuesta directamente (contiene la IP)
     # 4. Devolver None si hay algún error
-    pass
+    
+    # Encara que no molt "ELEGANT", posarem el la direcció URL com a parametre de la funció 
+    # (es per no fallar el els tests)
+    url_addr='https://api.ipify.org/'
+
+    # crido a la funció GET 
+    try:
+        response = requests.get(url_addr)
+
+        # as raise_for_status is not working with "pytests, Mock" modules, we need to process errors by hand
+        # print(response.raise_for_status())
+        
+        # comprobo que el codi és 2XX
+        if response.status_code>=200 and response.status_code<299:
+            # retorno el content que en aquest cas esta codificat com 'ascii'
+            return response.text
+        else:
+            # Si el codi es diferent, retorno None: errors o redireccions (codis 1XX, 3XX, 4XX o 5XX)
+            return None
+    
+
+    # s'ha produït un error, i retorno "none"
+    except:
+        # si hi ha algun altre problema en connectar, torna un None
+        return None
 
 if __name__ == "__main__":
     # Ejemplo de uso de la función

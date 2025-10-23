@@ -14,6 +14,13 @@ de ipify.org usando el formato JSON, que es más estructurado que el texto plano
 
 import requests
 
+import time
+
+def get_url_address() -> str:
+    # addreça esta "HARD CODED" (no es elegant)
+    return 'https://api.ipify.org?format=json'
+
+
 def get_user_ip_json():
     """
     Realiza una petición GET a api.ipify.org para obtener la dirección IP pública
@@ -29,7 +36,21 @@ def get_user_ip_json():
     # 3. Convertir la respuesta a formato JSON
     # 4. Extraer y devolver la IP del campo "ip" del objeto JSON
     # 5. Devolver None si hay algún error
-    pass
+
+    # addreça esta "HARD CODED" (no es elegant)
+    url_addr =get_url_address()
+
+    # comprobo si torna resposta
+    try:
+        response = requests.get(url_addr)
+        response.raise_for_status()
+        # si resposta es rang 2XX, converteixo  JSON a diccionari i torno la clau "ip")
+        data = response.json()
+        return data['ip']
+    
+    except:
+        # si es produeix un error, torno RES
+        return None
 
 def get_response_info():
     """
@@ -48,7 +69,30 @@ def get_response_info():
     #    - 'elapsed_time': El tiempo que tardó la petición (en milisegundos)
     #    - 'response_size': El tamaño de la respuesta en bytes
     # 4. Devolver None si hay algún error
-    pass
+    
+
+       # addreça esta "HARD CODED" (no es elegant)
+    url_addr =get_url_address()
+    # mesuro el temps inicial
+    t_start = time.time()
+
+    # comprobo si torna resposta
+    try:
+        response = requests.get(url_addr)
+        #mesuro el temps final
+        t_diff =time.time()-t_start
+        response.raise_for_status()
+        # si resposta es rang 2XX, llegeixo els "headers" i retorno)
+        
+        return {
+            "content_type": response.headers['Content-Type'],
+            "elapsed_time": t_diff,
+            "response_size": len(response.content)
+            }
+    
+    except:
+        # si hi ha un error
+        return None
 
 if __name__ == "__main__":
     # Ejemplo de uso de las funciones

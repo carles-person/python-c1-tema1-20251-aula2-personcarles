@@ -41,10 +41,28 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         # 3. Si la ruta es cualquier otra, envía una respuesta 404
 
         # PISTA: Para obtener la IP del cliente puedes usar el método auxiliar _get_client_ip()
-        pass
+        # Processa la ruta ip
+        if self.path == '/ip':
+            # prepara el header
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+
+            # enviem el "body" del missatge
+            # message_str = bytes(self._get_client_ip(),'utf-8')
+            message = {'ip': self._get_client_ip()}
+            self.wfile.write(json.dumps(message).encode()) 
+        else:
+            self.send_response(404)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+
+            # set the content as byte-like string
+            message = {"error": "404: Page Not Found"}
+            self.wfile.write(json.dumps(message).encode())
 
 
-    def _get_client_ip(self):
+    def _get_client_ip(self) -> str:
         """
         Método auxiliar para obtener la IP del cliente desde los encabezados.
         Debes implementar la lógica para extraer la IP del cliente desde los encabezados
@@ -57,10 +75,18 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         # 1. Verifica si existe el encabezado 'X-Forwarded-For' (común en servidores con proxy)
         # 2. Si no existe, verifica otros encabezados comunes como 'X-Real-IP'
         # 3. Como último recurso, utiliza self.client_address[0]
-        pass
+    
+        # Check if X-FORWARDED-FOR or X-REAL-IP are in the header (labels are case insensitive)
+        if 'X-FORWARDED-FOR' in self.headers:
+            # returns the first address in the proxy chain
+            return self.headers['X-FORWARDED-FOR'].split(',')[0].strip()
+        elif 'X-REAL-IP' in self.headers:
+            return self['X-REAL-IP']
+        else:
+            return self.client_address[0] #client_address = (ip_client, port) // other option self.address_string()
 
 
-def create_server(host="localhost", port=8000):
+def create_server(host="0.0.0.0", port=8000):
     """
     Crea y configura el servidor HTTP
     """
