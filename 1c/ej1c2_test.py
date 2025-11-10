@@ -317,7 +317,7 @@ def test_create_stations_dataframe_success(sample_stations_data):
     assert isinstance(df, pd.DataFrame), "El resultado debe ser un DataFrame de pandas"
 
     # Verificar las columnas
-    expected_columns = ['station_id', 'latitude', 'longitude', 'name']
+    expected_columns = ['station_id', 'lat', 'lon', 'name']
     for col in expected_columns:
         assert col in df.columns, f"El DataFrame debe contener la columna '{col}'"
 
@@ -326,8 +326,8 @@ def test_create_stations_dataframe_success(sample_stations_data):
 
     # Verificar el contenido para la primera estación
     first_station = df[df['station_id'] == "1"].iloc[0]
-    assert first_station['latitude'] == 41.3979779, "La latitud debe ser correcta"
-    assert first_station['longitude'] == 2.1801069, "La longitud debe ser correcta"
+    assert first_station['lat'] == 41.3979779, "La latitud debe ser correcta"
+    assert first_station['lon'] == 2.1801069, "La longitud debe ser correcta"
     assert first_station['name'] == "GRAN VIA CORTS CATALANES, 760", "El nombre debe ser correcto"
 
 def test_create_stations_dataframe_invalid_input():

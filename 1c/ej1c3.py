@@ -23,7 +23,7 @@ Esta práctica refuerza conceptos de POO en Python como:
 
 import requests
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 
@@ -34,7 +34,9 @@ class StationStatus(enum.Enum):
     """
     # Define aquí los estados posibles (IN_SERVICE, MAINTENANCE, etc.)
     # según la documentación de la API
-    pass
+    IN_SERVICE = 'IN_SERVICE'
+    CLOSED = 'CLOSED'
+    UNDEFINED = 'UNDEFINED'
 
 
 @dataclass
@@ -43,9 +45,10 @@ class VehicleType:
     Clase que representa un tipo de vehículo y su cantidad disponible.
     """
     # Añade aquí los atributos necesarios: tipo de vehículo (vehicle_type_id) y cantidad (count)
-    pass
+    vehicle_type_id: str = ''
+    ammount: int = 0
 
-
+@dataclass
 class StationStatusInfo:
     """
     Clase que representa el estado de una estación de bicicletas compartidas.
@@ -61,6 +64,15 @@ class StationStatusInfo:
         last_reported: Timestamp del último reporte de estado
         vehicle_types: Lista de tipos de vehículos disponibles
     """
+    station_id: int = 0
+    status: StationStatus = StationStatus.UNDEFINED
+    num_bikes_available: int = 0
+    num_bikes_disabled: int = 0
+    num_docks_available: int = 0
+    is_renting: bool = False
+    is_returning: bool = False
+    vehicle_types: List[VehicleType] = field(default_factory=list)
+
     
     def __init__(self, station_data):
         """
@@ -72,7 +84,18 @@ class StationStatusInfo:
         """
         # Implementa aquí la inicialización de todos los atributos
         # a partir del diccionario station_data
-        pass
+        self.station_id = station_data['station_id'] or -1
+        self.status = station_data['status'] or StationStatus.UNDEFINED
+       
+        # numeric values return -1 if not possible to parse, or field is empty
+        # boolean values return False if field is empty
+        self.num_bikes_available = station_data['num_bikes_available'] or -1
+        self.num_bikes_disabled = station_data['num_bikes_disabled'] or -1
+        self.num_docks_available = station_data['num_docks_available'] or -1
+        self.is_renting = station_data['is_renting'] or False
+        self.is_returning = station_data['is_returning'] or False
+        self.vehicle_types = station_data
+
     
     @property
     def is_operational(self) -> bool:
@@ -84,7 +107,7 @@ class StationStatusInfo:
             bool: True si la estación está operativa, False en caso contrario
         """
         # Implementa aquí la lógica para determinar si la estación está operativa
-        pass
+        return self.is_operational
     
     def get_available_bikes_by_type(self) -> Dict[str, int]:
         """
@@ -96,7 +119,7 @@ class StationStatusInfo:
         """
         # Implementa aquí la lógica para devolver un diccionario
         # con la cantidad de bicicletas disponibles por tipo
-        pass
+        
     
     def __str__(self) -> str:
         """
@@ -107,7 +130,7 @@ class StationStatusInfo:
         """
         # Implementa aquí la lógica para devolver una representación en texto
         # de la estación y su estado actual
-        pass
+        return f'id:{self.station_id} - status:{self.status}'
 
 
 class BarcelonaBikingClient:
@@ -121,6 +144,8 @@ class BarcelonaBikingClient:
         """
         self.base_url = "https://barcelona.publicbikesystem.net/customer/gbfs/v2/en"
         self.station_status_url = f"{self.base_url}/station_status"
+        self.station_list=[]
+        
     
     def get_stations_status(self) -> Tuple[List[StationStatusInfo], Optional[datetime]]:
         """
@@ -137,7 +162,28 @@ class BarcelonaBikingClient:
         # 3. Crear objetos StationStatusInfo para cada estación en la respuesta
         # 4. Extraer el timestamp de last_updated de la respuesta
         # 5. Manejar posibles errores (conexión, formato, etc.)
-        pass
+
+        # GET de los datos
+        try:
+            r = requests.get(self.station_status_url)
+            # is no torna un 200, genero una excepció
+            r.raise_for_status()
+
+            station_list = r.json().get('data',{}).get('stations')
+            last_updated = datetime.fromtimestamp(r.json().get('last_updated'))
+
+            # dict -> a List de StationStatusInfo
+            for station in station_list:
+                self.station_list.append(StationStatusInfo(station))
+
+            return self.station_list,last_updated
+
+
+        except requests.RequestException as err:
+            # TODO: defineix variable retorn
+            pass
+        
+
     
     def find_station_by_id(self, station_id: str) -> Optional[StationStatusInfo]:
         """

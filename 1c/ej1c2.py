@@ -17,6 +17,7 @@ Tu tarea es completar la implementación de las funciones indicadas.
 
 import requests
 import pandas as pd
+import json
 
 def get_stations_data():
     """
@@ -35,7 +36,23 @@ def get_stations_data():
     # 2. Verificar que la respuesta sea correcta (código 200)
     # 3. Extraer y devolver el objeto 'data' del JSON recibido
     # 4. Manejar posibles errores (conexión, formato, etc.)
-    pass
+    
+    data_return = None
+    try:
+        # crido la funció per obtenir informació sobre les estacións
+        r = requests.get(url)
+        r.raise_for_status()
+
+        if r.status_code == 200:
+            #extrec objecte data de la resposta i agafo el camp "data" i el torno 
+            # en format diccionari
+            data_return = r.json().get('data', None)
+        
+    
+    except requests.exceptions.RequestException as err:
+        data_return=None
+
+    return data_return
 
 
 def get_station_info(stations_data, station_id):
@@ -52,11 +69,37 @@ def get_station_info(stations_data, station_id):
     """
     # Implementa aquí la lógica para:
     # 1. Verificar que stations_data no es None y tiene la estructura esperada
+    
     # 2. Buscar la estación con el ID proporcionado en la lista de estaciones
     # 3. Devolver la información completa de esa estación
     # 4. Si no existe, devolver None
-    pass
+    
+    # inicialitzo data_return
+    data_return = None
+    # Verifico que no es none
+    if stations_data == None:
+        data_return= None
+    # is no esta buida, cobprobo que es un diccionari
+    elif not isinstance(stations_data,dict):
+        data_return = None
+    # arribo aqui quan stations_data te informació i és un diccionari.
+    else:
+        try:
+            list_stations = stations_data.get('stations')
+            # rtorna primera "station" trobada amb id=station_id
+            data_return = next((info for info in list_stations if info['station_id'] == station_id),None)
+            
+        # capturo error --> Key Error, or Value Error
+        except KeyError as err:
+            print(f'Station ID: {station_id} --> No Trobat o impossible recuperar informació')
+            data_return = None
+        except Exception as err:
+            print(f'Station ID: {station_id} --> Error Desconegut {err}')
+            data_return = None
 
+
+    # retorno el valor de l'estació sel·leccionada o None si hi ha error
+    return data_return
 
 def get_station_coordinates(station_info):
     """
@@ -74,7 +117,28 @@ def get_station_coordinates(station_info):
     # 2. Extraer los valores de latitud y longitud del diccionario
     # 3. Devolver ambos valores como una tupla (lat, lon)
     # 4. Manejar casos donde los campos no existan
-    pass
+    
+    # inicialitzo data_return com a diccionari
+    data_return = None
+    
+    # comprobo que no esta buit
+    if station_info == None:
+        data_return = None
+
+    # processo station_info, extreure coordenades
+    else:
+        # try except: per capturar excepcions de keys no existents
+        try:
+            lat = station_info['lat']
+            long = station_info['lon']
+            data_return = (lat,long)
+        except (KeyError) as err:
+            print(f'Keys Lat or Lon no existeixen')
+            data_return = None
+    
+    # retorno el valor
+    return data_return
+
 
 
 def create_stations_dataframe(stations_data):
@@ -93,8 +157,15 @@ def create_stations_dataframe(stations_data):
     # 2. Crear una lista de diccionarios con la información básica de cada estación
     # 3. Convertir esa lista en un DataFrame de pandas
     # 4. El DataFrame debe tener las columnas: 'station_id', 'latitude', 'longitude', 'name'
-    pass
-
+    
+    df_stations = None
+    if stations_data == None:
+        df_stations = None
+    else:
+        # creo dataframe and station_id, name, latitude, longitude i retorno el valor
+        df_stations = pd.DataFrame(stations_data.get('stations'),columns=['station_id','name','lat','lon'])
+        
+    return df_stations
 
 if __name__ == '__main__':
     # Obtener los datos de todas las estaciones
