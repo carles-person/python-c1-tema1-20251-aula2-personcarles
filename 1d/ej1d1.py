@@ -17,12 +17,15 @@ y permiten concentrarse en el análisis de datos en lugar de en los detalles té
 de la comunicación con la API.
 """
 
-import pybikes
+import pybikes as pb
+import pybikes.data as pbd
 import pandas as pd
 import time
 from typing import List, Dict, Any, Optional
 import matplotlib.pyplot as plt
 import sys
+# from models.BikeSystem import BikeSysInfo
+   
 
 
 def listar_sistemas_disponibles() -> List[str]:
@@ -34,8 +37,19 @@ def listar_sistemas_disponibles() -> List[str]:
     """
     # Implementa aquí la lógica para obtener y devolver la lista
     # de sistemas disponibles en pybikes
-    pass
+    
+    # inicialitso la llista de systemes --> instancies buida
+    instance_tag_list:List[str] = []
+    
+    #obting llista de sistemes o schemas
+    available_instances = pb.get_instances() # retorna una llista de tuples {classe:str, instancia:dict}
+    
+    #escanejo totes les classes i instances, i genero una llista de tots els tags
+    for cls, instance in available_instances:
+        instance_tag_list.append(instance.get('tag','--'))
 
+    # retorno la llista
+    return instance_tag_list
 
 def buscar_sistema_por_ciudad(ciudad: str) -> List[str]:
     """
@@ -49,8 +63,25 @@ def buscar_sistema_por_ciudad(ciudad: str) -> List[str]:
     """
     # Implementa aquí la lógica para buscar y devolver sistemas
     # que coincidan con la ciudad especificada
-    pass
+    
+    # inicialitzo el valor a tornar
+    list_of_instances_in_city:List[str] = []
 
+    # inicialitzo la llista amb totes les instal·lacions possibles (intances)  
+    instances_list = listar_sistemas_disponibles()
+
+    # per cada instancia comprobo si existeix la ciutat, esta en el camp "meta"->"city" del diccionari anidat
+    for item in instances_list:
+        try:
+            cls,inst=pb.find_system(item)
+            _city = inst.get('meta').get('city',"--")
+            if ciudad.lower() == _city.lower():
+                list_of_instances_in_city.append(item)
+        except Exception as err:
+            print(f'Error on {item}\n{err}')
+        
+    return list_of_instances_in_city
+        
 
 def obtener_info_sistema(tag: str) -> Dict[str, Any]:
     """
@@ -64,8 +95,16 @@ def obtener_info_sistema(tag: str) -> Dict[str, Any]:
     """
     # Implementa aquí la lógica para obtener y devolver
     # los metadatos del sistema especificado
-    pass
-
+    
+    # inicialitzo la llista amb totes les instal·lacions possibles   
+    
+    try:
+        tag_info = pb.get(tag)
+        return tag_info.meta
+    except:
+        return None
+    
+    
 
 def obtener_estaciones(tag: str) -> Optional[List]:
     """
@@ -79,8 +118,24 @@ def obtener_estaciones(tag: str) -> Optional[List]:
     """
     # Implementa aquí la lógica para obtener y devolver
     # la lista de estaciones del sistema especificado
-    pass
 
+
+    # obtinc objecte amb la informació del tag/instance
+    # eb cas de qualsevol tipus error, retorno "None"
+    result:List
+
+    try:
+        instance_info = pb.get(tag)
+    
+        # actualitzo info sobre les estacions
+        instance_info.update()
+        # copio a result
+        result = instance_info.stations
+    except:
+        result = None
+    
+    return result
+    
 
 def crear_dataframe_estaciones(estaciones: List) -> pd.DataFrame:
     """
@@ -95,7 +150,22 @@ def crear_dataframe_estaciones(estaciones: List) -> pd.DataFrame:
     # Implementa aquí la lógica para convertir la lista de estaciones
     # en un DataFrame de pandas con al menos las columnas:
     # nombre, latitud, longitud, bicicletas disponibles, espacios libres
-    pass
+    
+    """
+    # per passar els unit test, he de canviar la funció a  per la sequent
+    _ = [station.to_dict() for station in estaciones]
+    """
+
+    #funcio replacement per passar unit tests :( 
+    _ =[ {"name": station.name,
+          "latitude": station.latitude,
+          "longitude": station.longitude,
+          "bikes": station.bikes,
+          "free": station.free } for station in estaciones]
+    
+    return pd.DataFrame(_)
+
+    
 
 
 def visualizar_estaciones(df: pd.DataFrame) -> None:
@@ -107,7 +177,12 @@ def visualizar_estaciones(df: pd.DataFrame) -> None:
     """
     # Implementa aquí la lógica para crear un gráfico de barras que muestre
     # las 10 estaciones con más bicicletas disponibles
-    pass
+    
+    # genero un dataframe amb les 10 estacions amb mes bicicletes disponibles
+    top_10 = df.nlargest(10, columns='bikes')
+    top_10.plot(x='name',y='bikes', kind='bar', title="TOP 10 Estacions amb mes bicis")
+    plt.show()
+
 
 
 if __name__ == "__main__":
