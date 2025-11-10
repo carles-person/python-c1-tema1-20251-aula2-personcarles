@@ -159,16 +159,14 @@ def create_stations_dataframe(stations_data:list):
     # 4. El DataFrame debe tener las columnas: 'station_id', 'latitude', 'longitude', 'name'
     
     df_stations = None
-    print(f'-------->(1){stations_data}') 
-    print(f'-------->(2){df_stations}') 
+
     if stations_data == None:
-        print('-------> NONE')
         df_stations = None
 
     else:
         # miro si stations data conte el camp "stations", si no genero excepció "key Error"
         stations = stations_data.get('stations')
-        print(f'------STATIONS: {stations},{type(stations)}')
+
         
         # en cas afirmatiu, processo, stations. 
         # Retorno: 'None' si la info esta mal "formatejada", "Empty DF" si llista estacions esta buida,
@@ -188,10 +186,7 @@ def create_stations_dataframe(stations_data:list):
                 df_stations = None
 
     return df_stations
-        
 
-    print(f'-------->(3){df_stations}') 
-    return df_stations
 
 if __name__ == '__main__':
     # Obtener los datos de todas las estaciones
