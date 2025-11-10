@@ -141,7 +141,7 @@ def get_station_coordinates(station_info):
 
 
 
-def create_stations_dataframe(stations_data):
+def create_stations_dataframe(stations_data:list):
     """
     Crea un DataFrame de pandas con información básica de todas las estaciones.
     
@@ -159,12 +159,38 @@ def create_stations_dataframe(stations_data):
     # 4. El DataFrame debe tener las columnas: 'station_id', 'latitude', 'longitude', 'name'
     
     df_stations = None
+    print(f'-------->(1){stations_data}') 
+    print(f'-------->(2){df_stations}') 
     if stations_data == None:
+        print('-------> NONE')
         df_stations = None
+
     else:
-        # creo dataframe and station_id, name, latitude, longitude i retorno el valor
-        df_stations = pd.DataFrame(stations_data.get('stations'),columns=['station_id','name','lat','lon'])
+        # miro si stations data conte el camp "stations", si no genero excepció "key Error"
+        stations = stations_data.get('stations')
+        print(f'------STATIONS: {stations},{type(stations)}')
         
+        # en cas afirmatiu, processo, stations. 
+        # Retorno: 'None' si la info esta mal "formatejada", "Empty DF" si llista estacions esta buida,
+        # o un DF amb la llista.
+        
+        if stations:
+            # creo dataframe and station_id, name, latitude, longitude i retorno el valor
+            df_stations = pd.DataFrame(stations,columns=['station_id','name','lat','lon'])
+
+            # si no existeixen camps, el dataframe torna buit
+            if df_stations.empty:
+                df_stations = None
+        else:
+            if isinstance(stations,list):
+                df_stations = pd.DataFrame() # create an empty dataframe
+            else:
+                df_stations = None
+
+    return df_stations
+        
+
+    print(f'-------->(3){df_stations}') 
     return df_stations
 
 if __name__ == '__main__':
