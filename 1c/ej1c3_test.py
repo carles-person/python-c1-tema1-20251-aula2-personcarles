@@ -344,6 +344,8 @@ class TestBarcelonaBikingClient:
         
         # Crear el cliente y buscar una estación
         client = BarcelonaBikingClient()
+        client.station_list,last_updated = client.get_stations_status()
+
         found_station = client.find_station_by_id("1")
         
         # Verificar que se encontró la estación correcta
@@ -368,6 +370,8 @@ class TestBarcelonaBikingClient:
         
         # Crear el cliente y obtener estaciones operativas
         client = BarcelonaBikingClient()
+        client.station_list,last_updated = client.get_stations_status()
+        
         operational = client.get_operational_stations()
         
         # Verificar que solo se devuelven las estaciones operativas
@@ -388,6 +392,8 @@ class TestBarcelonaBikingClient:
         
         # Crear el cliente y obtener estaciones con bicicletas disponibles
         client = BarcelonaBikingClient()
+        client.station_list,last_updated = client.get_stations_status()
+ 
         with_bikes = client.get_stations_with_available_bikes(min_bikes=5)
         
         # Verificar que solo se devuelven estaciones con suficientes bicicletas
