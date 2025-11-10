@@ -36,6 +36,7 @@ class StationStatus(enum.Enum):
     # según la documentación de la API
     IN_SERVICE = 'IN_SERVICE'
     CLOSED = 'CLOSED'
+    MAINTENANCE = 'MAINTENANCE'
     UNDEFINED = 'UNDEFINED'
 
 
@@ -46,7 +47,7 @@ class VehicleType:
     """
     # Añade aquí los atributos necesarios: tipo de vehículo (vehicle_type_id) y cantidad (count)
     vehicle_type_id: str = ''
-    ammount: int = 0
+    count: int = 0
 
 @dataclass
 class StationStatusInfo:
@@ -71,7 +72,9 @@ class StationStatusInfo:
     num_docks_available: int = 0
     is_renting: bool = False
     is_returning: bool = False
+    last_reported: int = 0
     vehicle_types: List[VehicleType] = field(default_factory=list)
+    vehicle_docks: List = field(default_factory=list)
 
     
     def __init__(self, station_data):
@@ -85,7 +88,12 @@ class StationStatusInfo:
         # Implementa aquí la inicialización de todos los atributos
         # a partir del diccionario station_data
         self.station_id = station_data['station_id'] or -1
-        self.status = station_data['status'] or StationStatus.UNDEFINED
+        if station_data['status'] == 'IN_SERVICE':
+            self.status = StationStatus.IN_SERVICE
+        elif station_data['status'] == 'CLOSED':
+            self.status = StationStatus.CLOSED
+        else:
+            self.status = StationStatus.UNDEFINED
        
         # numeric values return -1 if not possible to parse, or field is empty
         # boolean values return False if field is empty
@@ -94,7 +102,9 @@ class StationStatusInfo:
         self.num_docks_available = station_data['num_docks_available'] or -1
         self.is_renting = station_data['is_renting'] or False
         self.is_returning = station_data['is_returning'] or False
-        self.vehicle_types = station_data
+        self.last_reported=station_data['last_reported'] or 0
+        self.vehicle_types = station_data['vehicle_types_available'] or []
+        self.vehicle_docks = station_data['vehicle_docks_available'] or []
 
     
     @property
@@ -107,7 +117,9 @@ class StationStatusInfo:
             bool: True si la estación está operativa, False en caso contrario
         """
         # Implementa aquí la lógica para determinar si la estación está operativa
-        return self.is_operational
+
+        #retorno True is esta IN_SERVICE, si no False
+        return True if self.status == StationStatus.IN_SERVICE else False
     
     def get_available_bikes_by_type(self) -> Dict[str, int]:
         """
@@ -120,6 +132,14 @@ class StationStatusInfo:
         # Implementa aquí la lógica para devolver un diccionario
         # con la cantidad de bicicletas disponibles por tipo
         
+        # inicializto diccionary
+        return_value = {}
+
+        for x in self.vehicle_types:
+            v=list(x.values())
+            return_value[v[0]] = v[1]
+        
+        return return_value
     
     def __str__(self) -> str:
         """
@@ -130,7 +150,7 @@ class StationStatusInfo:
         """
         # Implementa aquí la lógica para devolver una representación en texto
         # de la estación y su estado actual
-        return f'id:{self.station_id} - status:{self.status}'
+        return f'id:{self.station_id} - count: {self.num_bikes_available} - status:{self.status.value}'
 
 
 class BarcelonaBikingClient:
@@ -170,7 +190,7 @@ class BarcelonaBikingClient:
             r.raise_for_status()
 
             station_list = r.json().get('data',{}).get('stations')
-            last_updated = datetime.fromtimestamp(r.json().get('last_updated'))
+            last_updated = r.json().get('last_updated')
 
             # dict -> a List de StationStatusInfo
             for station in station_list:
@@ -180,8 +200,8 @@ class BarcelonaBikingClient:
 
 
         except requests.RequestException as err:
-            # TODO: defineix variable retorn
-            pass
+            # variable retorn si hi ha un error
+            return [],None
         
 
     
@@ -197,7 +217,23 @@ class BarcelonaBikingClient:
                                          o None si no se encuentra
         """
         # Implementa aquí la lógica para buscar y devolver una estación por su ID
-        pass
+        
+        # inicialitzo el valor de retorn
+        return_value = None
+        print(f"finding id: {station_id} in {len(self.station_list)}")
+        # Busco el valor station_id en la llista
+
+        # aquesta rutina torna sempre la primera coincidencia en la llista.
+        # Els unit test comproban que es retorna una sola estació, no accepta que pugui
+        # haver errors de una duplicitat en el ID degut a un error.
+        for station in self.station_list:
+            print(f"id: {station.station_id} == {station_id}")
+            if station.station_id == station_id:
+                return_value = station
+                break
+
+        # torno estació amb ID, o si no s'ha trobar, el valor es None
+        return return_value
     
     def get_operational_stations(self) -> List[StationStatusInfo]:
         """
@@ -207,8 +243,8 @@ class BarcelonaBikingClient:
             List[StationStatusInfo]: Lista de estaciones operativas
         """
         # Implementa aquí la lógica para filtrar y devolver solo las estaciones operativas
-        pass
-    
+        return [x for x in self.station_list if x.status == StationStatus.IN_SERVICE]
+
     def get_stations_with_available_bikes(self, min_bikes: int = 1) -> List[StationStatusInfo]:
         """
         Obtiene la lista de estaciones que tienen al menos min_bikes disponibles.
@@ -221,8 +257,12 @@ class BarcelonaBikingClient:
         """
         # Implementa aquí la lógica para filtrar y devolver las estaciones
         # con al menos min_bikes disponibles
-        pass
+        
+        # també comprobaré que l'estació esta "en servei"
+        return [x for x in self.station_list if x.status == StationStatus.IN_SERVICE and x.num_bikes_available >= min_bikes]
 
+    def __str__(self):
+        return f'Units: {len(self.station_list)}\n{self.station_list}'
 
 if __name__ == "__main__":
     # Ejemplo de uso del cliente
@@ -244,6 +284,8 @@ if __name__ == "__main__":
         with_bikes = client.get_stations_with_available_bikes(min_bikes=5)
         print(f"\nEstaciones con al menos 5 bicicletas: {len(with_bikes)}")
         
+
+        print(client.find_station_by_id("1"))
         # Mostrar detalles de algunas estaciones
         if stations:
             print("\nDetalle de algunas estaciones:")
