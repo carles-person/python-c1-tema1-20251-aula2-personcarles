@@ -37,7 +37,43 @@ def get_nonexistent_resource():
     # 2. Capturar la excepción o error HTTP (no interrumpir la ejecución)
     # 3. Extraer la información solicitada del error
     # 4. Devolver un diccionario con la información del error
-    pass
+
+    # inicialitzo diccionari
+    data = {
+        'status_code': 0,
+        'error_message': '',
+        'requested_url': ''
+    }
+
+
+    try:
+        # intento obtenir resposta
+        print(f'----> Connection STARTING *********************************')
+        response = requests.get(url)
+        
+        # ATENCIÓ: sembla que els test no funcionen be quan es crida la funció
+        # response.raise_for_status().
+        # Per aquest motiu, el millor es processar un per un la familia de codis d'error
+        # utilitzant un ' if elif else'
+        # response.raise_for_status()
+        
+        # verificació que ha estat OK:2XX, 3XX,4XX o 5XX
+        # agrupades ja que totes tornen la mateixa informació
+        if 200 <= response.status_code < 600:
+            data['status_code'] = response.status_code
+            data['requested_url'] = response.url
+            data['error_message'] = response.reason
+        else:
+            data = None
+        
+    # Processo Error de connexió
+    except:
+        data['status_code']= 999
+        data['requested_url'] = url
+        data['error_message'] = 'Not able to access to the sever'
+    
+    finally:
+        return data
 
 if __name__ == "__main__":
     # Ejemplo de uso de la función

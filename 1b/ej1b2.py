@@ -49,7 +49,62 @@ def request_with_error_handling(url):
     # - Redirecciones (códigos 3xx)
     # - Errores del cliente (códigos 4xx)
     # - Errores del servidor (códigos 5xx)
-    pass
+
+    # Inicialitzo dictionari per retorn d'informació amb valors per defecte
+    data = {
+        'success': False,
+        'status_code': int(0),
+        'message': '',
+        'is_redirect': False,
+        'redirect_url': ''
+    }
+
+    try:
+        print(f'------> (1) URL: {url}')
+        response = requests.get(url)
+        print('-----> (2) SERVER REPLIED')
+
+        response_body = response.json()
+
+        # processo els status code
+        sc = int(response.status_code/100)
+        print(f'------> (3) **** SC: {sc}')
+        print(f'------> (4) ***** BODY: {response_body}')
+        
+        # comprovo que el codi al "header" és el mateix que en el message body --> si no genero una excepció
+        if int(response_body['code']) != int(response.status_code):
+            print("--- (5) ERROR DIFFERENTS CODES")
+            raise ValueError("code in body and header do not match")
+
+        # modifico diccionari amb els valors independents del resultat
+        data['status_code']=response_body['code']  # alternatively: response.status_code
+        data['message'] = response_body['description'] # alternatively: response.reason
+        print(f'---------------->\n{data}\n<--------------------')
+        if sc == 1 or sc == 2:
+            # response 1XX o 2XX o 3XX
+            data['success']=True  
+            
+        elif sc == 3:
+        # response to 3XX
+            data['success']=False
+            # info sobre redireccó
+            data['is_redirect'] = True
+            # servidor ha de respondre amb la redirecció en un camp 'location' al header
+            # no obstant, no és obligatori
+            data['redirect_url'] = response.headers.get('location1',"")
+
+        # error de client o servidor 4XX, 5XX
+        elif sc == 4 or sc == 5:
+            data['success']=False
+            data['error_type'] = 'client_error' if sc == 4 else 'server_error'
+    
+    except requests.exceptions.ConnectionError as err:
+        data['message']= 'connection_error'
+        print(f'Connection Error:\n{err}')
+            
+    return data
+
+    
 
 
 if __name__ == "__main__":

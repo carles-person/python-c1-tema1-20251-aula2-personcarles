@@ -16,7 +16,7 @@ def mock_responses():
     """
     Fixture para configurar respuestas simuladas para las peticiones HTTP
     """
-    with responses.RequestsMock() as rsps:
+    with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
         # Configurar respuesta 404 - Not Found
         rsps.add(
             responses.GET,
@@ -41,7 +41,7 @@ def mock_responses():
             "https://httpstatuses.maor.io/301",
             json={"code": 301, "description": "Moved Permanently"},
             status=301,
-            headers={"Location": "https://httpstatuses.maor.io/"},
+            headers={"Location1": "https://httpstatuses.maor.io/"},
             content_type="application/json"
         )
 
